@@ -9,3 +9,7 @@ export function Greet(arg1) {
 export function ListDir(arg1) {
   return window['go']['main']['App']['ListDir'](arg1);
 }
+
+export function ListUSB() {
+  return window['go']['main']['App']['ListUSB']();
+}

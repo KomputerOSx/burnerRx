@@ -4,3 +4,5 @@
 export function Greet(arg1:string):Promise<string>;
 
 export function ListDir(arg1:string):Promise<Array<string>>;
+
+export function ListUSB():Promise<Array<Record<string, string>>>;

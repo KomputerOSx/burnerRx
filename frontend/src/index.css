@@ -5,6 +5,7 @@
 @import "@fontsource-variable/figtree";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant hover (&:hover);
 
 @theme inline {
     --font-heading: var(--font-mono);
