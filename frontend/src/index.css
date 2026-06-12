@@ -1,4 +1,14 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'Mogilte';
+  src: url('./assets/Mogilte.woff2') format('woff2'),
+       url('./assets/Mogilte.woff') format('woff'),
+       url('./assets/Mogilte.ttf') format('truetype'),
+       url('./assets/Mogilte.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/jetbrains-mono";

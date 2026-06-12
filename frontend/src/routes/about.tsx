@@ -21,7 +21,7 @@ function AboutComponent() {
       </Button>
 
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight">BurnerRx</h1>
+        <h1 className="text-5xl tracking-tight" style={{ fontFamily: 'Mogilte, sans-serif' }}>Burner<span className="text-primary">Rx</span></h1>
         <p className="text-sm text-muted-foreground mt-2">USB ISO Flasher for Linux</p>
       </div>
 
