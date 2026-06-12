@@ -52,3 +52,5 @@ jobs:
 
           scp "${DEB}" "${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}/${DEB}"
           ssh "${VPS_USER}@${VPS_HOST}" "ln -sf ${REMOTE_DIR}/${DEB} ${REMOTE_DIR}/burnerrx-latest.deb"
+          ssh "${VPS_USER}@${VPS_HOST}" "mkdir -p ${REMOTE_DIR}/burnerrx"
+          scp "install.sh" "${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}/burnerrx/install.sh"
