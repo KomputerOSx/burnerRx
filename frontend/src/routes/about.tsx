@@ -9,20 +9,33 @@ function AboutComponent() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-3xl font-bold">BurnerRx</h1>
-      <p className="text-muted-foreground text-center max-w-md">
-        A lightweight file browser built with Wails, React, and TanStack Router.
-        Browse your filesystem directly from a native desktop app.
+    <div className="relative flex min-h-svh flex-col items-center justify-center gap-8 p-8">
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="absolute top-6 right-6"
+        onClick={() => navigate({ to: '/' })}
+      >
+        ← Back
+      </Button>
+
+      <div className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight">BurnerRx</h1>
+        <p className="text-sm text-muted-foreground mt-2">USB ISO Flasher for Linux</p>
+      </div>
+
+      <p className="text-muted-foreground text-center max-w-sm text-sm leading-relaxed">
+        A lightweight native desktop app for flashing ISO images to USB drives.
+        Built for Linux with speed and simplicity in mind.
       </p>
 
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-        <span>Built with Go + Wails v2</span>
+      <div className="flex flex-col gap-1 text-sm text-muted-foreground text-center">
+        <span>Go + Wails v2</span>
         <span>React 19 + TanStack Router</span>
         <span>shadcn/ui + Tailwind CSS v4</span>
       </div>
 
-      <Button onClick={() => navigate({ to: '/' })}>Back to Files</Button>
     </div>
   )
 }
