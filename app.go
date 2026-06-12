@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,14 +13,11 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+const helperPath = "/usr/local/bin/burnerrx-helper"
+
 // App struct
 type App struct {
 	ctx context.Context
-}
-type ProgressReader struct {
-	io.Reader
-	TotalRead  int64
-	OnProgress func(bytesRead int64)
 }
 
 // NewApp creates a new App application struct
@@ -118,75 +115,39 @@ func readFile(path string) string {
 	return strings.TrimSpace(string(b))
 }
 
-func (a *App) FormatUSB(devicePath string, password string) error {
-	if !strings.HasPrefix(devicePath, "/dev/") {
-		return fmt.Errorf("invalid device path")
+func (a *App) FormatUSB(devicePath string) error {
+	out, err := exec.Command("pkexec", helperPath, "format", devicePath).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("format failed: %s", strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func (a *App) BurnISO(input string, output string, formatFirst bool) error {
+	args := []string{helperPath, "burn", input, output}
+	if formatFirst {
+		args = append(args, "--format")
+	}
+	cmd := exec.Command("pkexec", args...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start helper: %s", err)
 	}
 
-	blockName := strings.TrimPrefix(devicePath, "/dev/")
-	entries, _ := os.ReadDir("/sys/class/block")
-	for _, e := range entries {
-		if strings.HasPrefix(e.Name(), blockName) && e.Name() != blockName {
-			cmd := exec.Command("sudo", "-S", "umount", "/dev/"+e.Name())
-			cmd.Stdin = strings.NewReader(password + "\n")
-			cmd.CombinedOutput()
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "PROGRESS:") {
+			var percent int64
+			fmt.Sscanf(line, "PROGRESS:%d", &percent)
+			runtime.EventsEmit(a.ctx, "burn:progress", percent)
 		}
 	}
 
-	cmd1 := exec.Command("sudo", "-S", "umount", devicePath)
-	cmd1.Stdin = strings.NewReader(password + "\n")
-	cmd1.CombinedOutput()
-
-	cmd2 := exec.Command("sudo", "-S", "mkfs.vfat", "-I", "-F", "32", devicePath)
-	cmd2.Stdin = strings.NewReader(password + "\n")
-	output2, err := cmd2.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("format failed: %s", string(output2))
-	}
-	return nil
-}
-
-func (pr *ProgressReader) Read(p []byte) (int, error) {
-	n, err := pr.Reader.Read(p)
-
-	if n > 0 {
-		pr.TotalRead += int64(n)
-		pr.OnProgress(pr.TotalRead)
-	}
-	return n, err
-}
-
-func (a *App) BurnISO(input string, output string) error {
-
-	isoFile, err := os.Open(input)
-
-	if err != nil {
-		return fmt.Errorf("iso file failed to open: %s", err)
-	}
-	defer isoFile.Close()
-
-	info, _ := isoFile.Stat()
-	totalSize := info.Size()
-
-	device, err := os.OpenFile(output, os.O_WRONLY, 0)
-	if err != nil {
-		return fmt.Errorf("device failed to open: %s", err)
-	}
-	defer device.Close()
-
-	_, err = io.Copy(device, &ProgressReader{
-		Reader: isoFile,
-		OnProgress: func(bytesRead int64) {
-			percent := bytesRead * 100 / totalSize
-			runtime.EventsEmit(a.ctx, "burn:progress", percent)
-		},
-	})
-
-	if err != nil {
-		return fmt.Errorf("burn failed: %s", err)
-	}
-
-	return nil
+	return cmd.Wait()
 }
 
 

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { BurnISO, FormatUSB, ListUSB, OpenFileDialog } from '../../wailsjs/go/main/App'
+import { BurnISO, ListUSB, OpenFileDialog } from '../../wailsjs/go/main/App'
 import { Button } from '@/components/ui/button'
 import { EventsOn } from '../../wailsjs/runtime/runtime'
 
@@ -17,7 +17,6 @@ function RouteComponent() {
   const [progress, setProgress] = useState<number>(0)
   const [burning, setBurning] = useState(false)
   const [isoFullPath, setIsoFullPath] = useState<string>('')
-  const [password, setPassword] = useState<string>('')
   const [formatError, setFormatError] = useState<string>('')
 
   async function loadDevices() {
@@ -41,7 +40,7 @@ function RouteComponent() {
   const selectedDeviceInfo = devices.find(d => d.devicePath === selectedDevice)
   const isCompatible = selectedDeviceInfo?.format === 'vfat'
   const isValidISO = selectedISO.endsWith('.iso')
-  const ready = selectedDevice && selectedISO && isValidISO && (isCompatible || (confirmFormat && password.length > 0))
+  const ready = selectedDevice && selectedISO && isValidISO && (isCompatible || confirmFormat)
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-12 px-8 bg-background">
@@ -129,10 +128,7 @@ function RouteComponent() {
                   setProgress(0)
                   setFormatError('')
                   try {
-                    if (confirmFormat) {
-                      await FormatUSB(selectedDevice, password)
-                    }
-                    await BurnISO(isoFullPath, selectedDevice)
+                    await BurnISO(isoFullPath, selectedDevice, confirmFormat)
                   } catch (e) {
                     setFormatError(String(e))
                   } finally {
@@ -144,7 +140,7 @@ function RouteComponent() {
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => { setSelectedDevice(''); setSelectedISO(''); setIsoFullPath(''); setConfirmFormat(false); setProgress(0); setPassword(''); setFormatError('') }}
+                onClick={() => { setSelectedDevice(''); setSelectedISO(''); setIsoFullPath(''); setConfirmFormat(false); setProgress(0); setFormatError('') }}
               >
                 Clear
               </Button>
@@ -169,15 +165,6 @@ function RouteComponent() {
                 Reformat before flashing
               </label>
             </div>
-            {confirmFormat && (
-              <input
-                type="password"
-                placeholder="Enter sudo password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setFormatError('') }}
-                className="border border-border rounded-md px-3 bg-background text-foreground text-sm h-9 w-full"
-              />
-            )}
             {formatError && (
               <p className="text-xs text-destructive">{formatError}</p>
             )}
