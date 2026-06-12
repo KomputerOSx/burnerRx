@@ -123,11 +123,21 @@ func (a *App) FormatUSB(devicePath string, password string) error {
 		return fmt.Errorf("invalid device path")
 	}
 
+	blockName := strings.TrimPrefix(devicePath, "/dev/")
+	entries, _ := os.ReadDir("/sys/class/block")
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), blockName) && e.Name() != blockName {
+			cmd := exec.Command("sudo", "-S", "umount", "/dev/"+e.Name())
+			cmd.Stdin = strings.NewReader(password + "\n")
+			cmd.CombinedOutput()
+		}
+	}
+
 	cmd1 := exec.Command("sudo", "-S", "umount", devicePath)
 	cmd1.Stdin = strings.NewReader(password + "\n")
 	cmd1.CombinedOutput()
 
-	cmd2 := exec.Command("sudo", "-S", "mkfs.vfat", "-F", "32", devicePath)
+	cmd2 := exec.Command("sudo", "-S", "mkfs.vfat", "-I", "-F", "32", devicePath)
 	cmd2.Stdin = strings.NewReader(password + "\n")
 	output2, err := cmd2.CombinedOutput()
 	if err != nil {

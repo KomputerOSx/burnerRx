@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { BurnISO, ListUSB, OpenFileDialog } from '../../wailsjs/go/main/App'
+import { BurnISO, FormatUSB, ListUSB, OpenFileDialog } from '../../wailsjs/go/main/App'
 import { Button } from '@/components/ui/button'
 import { EventsOn } from '../../wailsjs/runtime/runtime'
 
@@ -17,6 +17,8 @@ function RouteComponent() {
   const [progress, setProgress] = useState<number>(0)
   const [burning, setBurning] = useState(false)
   const [isoFullPath, setIsoFullPath] = useState<string>('')
+  const [password, setPassword] = useState<string>('')
+  const [formatError, setFormatError] = useState<string>('')
 
   async function loadDevices() {
     try {
@@ -39,7 +41,7 @@ function RouteComponent() {
   const selectedDeviceInfo = devices.find(d => d.devicePath === selectedDevice)
   const isCompatible = selectedDeviceInfo?.format === 'vfat'
   const isValidISO = selectedISO.endsWith('.iso')
-  const ready = selectedDevice && selectedISO && isValidISO && (isCompatible || confirmFormat)
+  const ready = selectedDevice && selectedISO && isValidISO && (isCompatible || (confirmFormat && password.length > 0))
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-12 px-8 bg-background">
@@ -88,24 +90,6 @@ function RouteComponent() {
                 </option>
               ))}
             </select>
-            {selectedDevice && (
-              <p className="text-xs text-muted-foreground">{selectedDevice}</p>
-            )}
-            {selectedDevice && !isCompatible && (
-              <div className="flex flex-col gap-2 mt-1">
-                <p className="text-xs text-destructive">
-                  Format incompatible ({selectedDeviceInfo?.format || 'unknown'}). Must be FAT32.
-                </p>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={confirmFormat}
-                    onChange={(e) => setConfirmFormat(e.target.checked)}
-                  />
-                  Reformat to FAT32 before flashing
-                </label>
-              </div>
-            )}
           </div>
 
           {/* ISO File */}
@@ -140,17 +124,27 @@ function RouteComponent() {
                 className="flex-1"
                 disabled={!ready || burning}
                 variant={ready ? 'default' : 'outline'}
-                onClick={() => {
+                onClick={async () => {
                   setBurning(true)
                   setProgress(0)
-                  void BurnISO(isoFullPath, selectedDevice).finally(() => setBurning(false))
+                  setFormatError('')
+                  try {
+                    if (confirmFormat) {
+                      await FormatUSB(selectedDevice, password)
+                    }
+                    await BurnISO(isoFullPath, selectedDevice)
+                  } catch (e) {
+                    setFormatError(String(e))
+                  } finally {
+                    setBurning(false)
+                  }
                 }}
               >
                 {burning ? 'Burning...' : 'Flash'}
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => { setSelectedDevice(''); setSelectedISO(''); setIsoFullPath(''); setConfirmFormat(false); setProgress(0) }}
+                onClick={() => { setSelectedDevice(''); setSelectedISO(''); setIsoFullPath(''); setConfirmFormat(false); setProgress(0); setPassword(''); setFormatError('') }}
               >
                 Clear
               </Button>
@@ -158,6 +152,37 @@ function RouteComponent() {
           </div>
 
         </div>
+
+        {/* Format warning row */}
+        {selectedDevice && !isCompatible && (
+          <div className="flex flex-col gap-2 border-t border-border pt-4">
+            <div className="flex items-center gap-4">
+              <p className="text-xs text-destructive shrink-0">
+                Format incompatible ({selectedDeviceInfo?.format || 'unknown'}) — must be FAT32.
+              </p>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={confirmFormat}
+                  onChange={(e) => setConfirmFormat(e.target.checked)}
+                />
+                Reformat before flashing
+              </label>
+            </div>
+            {confirmFormat && (
+              <input
+                type="password"
+                placeholder="Enter sudo password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setFormatError('') }}
+                className="border border-border rounded-md px-3 bg-background text-foreground text-sm h-9 w-full"
+              />
+            )}
+            {formatError && (
+              <p className="text-xs text-destructive">{formatError}</p>
+            )}
+          </div>
+        )}
 
         {/* Progress */}
         {(burning || progress > 0) && (
