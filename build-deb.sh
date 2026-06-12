@@ -23,7 +23,6 @@ Architecture: $ARCH
 Maintainer: Ramyar <ramyarburhan26@gmail.com>
 Description: USB ISO flasher for Linux
  A lightweight desktop app for flashing ISO images to USB drives.
-Depends: polkit | policykit-1
 EOF
 
 cp build/bin/burnerRx "$PKG/usr/local/bin/burnerRx"
