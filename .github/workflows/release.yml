@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Build .deb
+        env:
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
         run: chmod +x build-deb.sh && ./build-deb.sh
 
       - name: Upload to VPS
