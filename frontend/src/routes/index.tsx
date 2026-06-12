@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { BurnISO, ListUSB, OpenFileDialog } from '../../wailsjs/go/main/App'
+import { BurnISO, FormatUSB, ListUSB, OpenFileDialog } from '../../wailsjs/go/main/App'
 import { Button } from '@/components/ui/button'
 import { EventsOn } from '../../wailsjs/runtime/runtime'
 
@@ -13,11 +13,12 @@ function RouteComponent() {
   const [devices, setDevices] = useState<Record<string, string>[]>([])
   const [selectedDevice, setSelectedDevice] = useState<string>('')
   const [selectedISO, setSelectedISO] = useState<string>('')
-  const [confirmFormat, setConfirmFormat] = useState(false)
   const [progress, setProgress] = useState<number>(0)
   const [burning, setBurning] = useState(false)
+  const [formatting, setFormatting] = useState(false)
   const [isoFullPath, setIsoFullPath] = useState<string>('')
   const [formatError, setFormatError] = useState<string>('')
+  const [formatted, setFormatted] = useState(false)
 
   async function loadDevices() {
     try {
@@ -40,7 +41,7 @@ function RouteComponent() {
   const selectedDeviceInfo = devices.find(d => d.devicePath === selectedDevice)
   const isCompatible = selectedDeviceInfo?.format === 'vfat'
   const isValidISO = selectedISO.endsWith('.iso')
-  const ready = selectedDevice && selectedISO && isValidISO && (isCompatible || confirmFormat)
+  const ready = selectedDevice && selectedISO && isValidISO && (isCompatible || formatted)
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-12 px-8 bg-background">
@@ -80,7 +81,7 @@ function RouteComponent() {
             <select
               className="border border-border rounded-md px-3 py-2 bg-background text-foreground text-sm h-10"
               value={selectedDevice}
-              onChange={(e) => { setSelectedDevice(e.target.value); setConfirmFormat(false) }}
+              onChange={(e) => { setSelectedDevice(e.target.value); setFormatted(false); setFormatError('') }}
             >
               <option value="">Choose device...</option>
               {devices.map((d, i) => (
@@ -128,7 +129,7 @@ function RouteComponent() {
                   setProgress(0)
                   setFormatError('')
                   try {
-                    await BurnISO(isoFullPath, selectedDevice, confirmFormat)
+                    await BurnISO(isoFullPath, selectedDevice, false)
                   } catch (e) {
                     setFormatError(String(e))
                   } finally {
@@ -140,7 +141,7 @@ function RouteComponent() {
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => { setSelectedDevice(''); setSelectedISO(''); setIsoFullPath(''); setConfirmFormat(false); setProgress(0); setFormatError('') }}
+                onClick={() => { setSelectedDevice(''); setSelectedISO(''); setIsoFullPath(''); setFormatted(false); setProgress(0); setFormatError('') }}
               >
                 Clear
               </Button>
@@ -156,14 +157,29 @@ function RouteComponent() {
               <p className="text-xs text-destructive shrink-0">
                 Format incompatible ({selectedDeviceInfo?.format || 'unknown'}) — must be FAT32.
               </p>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer shrink-0">
-                <input
-                  type="checkbox"
-                  checked={confirmFormat}
-                  onChange={(e) => setConfirmFormat(e.target.checked)}
-                />
-                Reformat before flashing
-              </label>
+              {formatted ? (
+                <p className="text-xs text-primary shrink-0">✓ Device formatted</p>
+              ) : (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={formatting || burning}
+                  onClick={async () => {
+                    setFormatting(true)
+                    setFormatError('')
+                    try {
+                      await FormatUSB(selectedDevice)
+                      setFormatted(true)
+                    } catch (e) {
+                      setFormatError(String(e))
+                    } finally {
+                      setFormatting(false)
+                    }
+                  }}
+                >
+                  {formatting ? 'Formatting...' : 'Format Device'}
+                </Button>
+              )}
             </div>
             {formatError && (
               <p className="text-xs text-destructive">{formatError}</p>

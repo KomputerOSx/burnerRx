@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="1.0.0"
+VERSION="${VERSION:-1.0.0}"
 ARCH="amd64"
 PKG="burnerrx_${VERSION}_${ARCH}"
 
 echo "Building binaries..."
-wails build
+if [ "${SKIP_BUILD:-0}" != "1" ]; then
+  wails build
+fi
 cd helper && go build -o burnerrx-helper . && cd ..
 
 echo "Creating package structure..."
