@@ -7,7 +7,7 @@ echo "Installing BurnerRx..."
 
 TMP=$(mktemp /tmp/burnerrx-XXXXXX.deb)
 curl -fsSL "$REPO_URL/burnerrx-latest.deb" -o "$TMP"
-sudo dpkg -i "$TMP"
+sudo apt-get install -y "$TMP"
 rm -f "$TMP"
 
 echo "Done. Run 'burnerRx' to launch."
