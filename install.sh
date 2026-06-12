@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
-REPO_URL="https://packages.strixon.co.uk"
+REPO="KomputerOSx/burnerRx"
 
 echo "Installing BurnerRx..."
 
+sudo apt-get update -qq || true
 TMP=$(mktemp /tmp/burnerrx-XXXXXX.deb)
-curl -fsSL "$REPO_URL/burnerrx-latest.deb" -o "$TMP"
+curl -fsSL "https://github.com/$REPO/releases/latest/download/burnerrx_1.0.0_amd64.deb" -o "$TMP"
 sudo apt-get install -y "$TMP"
 rm -f "$TMP"
 
