@@ -21,8 +21,9 @@ jobs:
 
       - name: Install Wails build dependencies
         run: |
+          echo "deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libwebkit2gtk-4.0-37
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
@@ -32,8 +33,6 @@ jobs:
         run: npm ci
 
       - name: Build .deb
-        env:
-          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
         run: chmod +x build-deb.sh && ./build-deb.sh
 
       - name: Upload to VPS
